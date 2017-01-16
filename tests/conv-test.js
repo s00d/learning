@@ -1,5 +1,5 @@
 var chai = require('chai');
-var expect = chai.expect; // we are using the "expect" style of Chai
+var expect = chai.expect;
 var assert = chai.assert;
 var decConv = require('../index');
 

@@ -34,12 +34,12 @@ console.log("2: ", item);
 console.log("c: ", i.toString(2));
 console.log("i: ", dCond.inv(item, 2) );
 
-var item = dCond.conv(i, 8)
+item = dCond.conv(i, 8)
 console.log("2: ", item);
 console.log("c: ", i.toString(8));
 console.log("i: ", dCond.inv(item, 8) );
 
-var item = dCond.conv(i, 16)
+item = dCond.conv(i, 16)
 console.log("2: ", item);
 console.log("c: ", i.toString(16));
 console.log("i: ", dCond.inv(item, 16) );
