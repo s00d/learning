@@ -26,4 +26,20 @@ decConv.prototype.inv = function(x, cc) {
 
 module.exports = decConv;
 
+var i = 20002
+var dCond = new decConv([]);
 
+var item = dCond.conv(i, 2)
+console.log("2: ", item);
+console.log("c: ", i.toString(2));
+console.log("i: ", dCond.inv(item, 2) );
+
+var item = dCond.conv(i, 8)
+console.log("2: ", item);
+console.log("c: ", i.toString(8));
+console.log("i: ", dCond.inv(item, 8) );
+
+var item = dCond.conv(i, 16)
+console.log("2: ", item);
+console.log("c: ", i.toString(16));
+console.log("i: ", dCond.inv(item, 16) );
