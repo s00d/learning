@@ -19,5 +19,8 @@
   "homepage": "https://github.com/s00d/learning#readme",
   "devDependencies": {
     "chai": "^3.5.0"
+  },
+  "dependencies": {
+    "asyncawait": "^1.0.6"
   }
 }
