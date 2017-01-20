@@ -9,7 +9,8 @@ var reader = readline.createInterface({
 var setting = {
     numDisks: 3,
     won: [1,0,0],
-    steps: 0
+    steps: 0,
+    start: 0
 }
 
 function getRand(min, max) {
@@ -38,10 +39,8 @@ HonoiInstance.prototype.repeat = function(str, count) {
 HonoiInstance.prototype.checkRow = function (i, index) {
     if(typeof index === 'undefined') index = setting.numDisks - 1
     if(index < 0) return setting.won[i] = 1
-    if(this.stacks[i][index] === index+1) return this.checkRow(i, index-1)
+    if(this.stacks[i][index] === index + 1) return this.checkRow(i, index - 1)
     else return false;
-
-    return false;
 }
 
 HonoiInstance.prototype.isWon = function () {
@@ -65,22 +64,21 @@ HonoiInstance.prototype.isValidMove = function (startTowerIdx, endTowerIdx, star
     } else return {start: startIndex, end: endIndex};
 };
 
-HonoiInstance.prototype.move = function (startTowerIdx, endTowerIdx) {
-    var idexes = this.isValidMove(startTowerIdx, endTowerIdx)
+HonoiInstance.prototype.move = function (startIdx, endIdx) {
+    var idexes = this.isValidMove(startIdx, endIdx)
     if (idexes) {
-        this.stacks[endTowerIdx][idexes.end] = this.stacks[startTowerIdx][idexes.start];
-        this.stacks[startTowerIdx][idexes.start] = 0
+        this.stacks[endIdx][idexes.end] = this.stacks[startIdx][idexes.start];
+        this.stacks[startIdx][idexes.start] = 0
         setting.steps++;
         return true;
-    } else {
-        return false;
     }
+    return false;
 };
 
 HonoiInstance.prototype.print = function () {
     // process.stdout.write('\x1B[2J');
     for (var i = 0; i < this.stacks.length; i++) {
-        console.log( "Stack " + (i + 1) + ": " + JSON.stringify(this.stacks[i]))
+        console.log("Stack " + (i + 1) + ": " + JSON.stringify(this.stacks[i]))
     }
 
     var max = setting.numDisks + 1;
@@ -146,6 +144,7 @@ HonoiInstance.prototype.moveSet = function(cb) {
     reader.question ("From?: ", function(a1) {
         reader.question ("To?: ", function(a2) {
             if(a1 == 'r') self.runBot();
+            if(a1 == 'z') return reader.close();
             if(a1 == 't') {
                 var run = false
                 self.solve(setting.numDisks, 0, 1, 2, function () {
@@ -162,7 +161,6 @@ HonoiInstance.prototype.moveSet = function(cb) {
 
 HonoiInstance.prototype.run = function(completionCallback) {
     var game = this;
-
     this.moveSet(function (start, end) {
         var moved = game.move(start, end);
         if (!moved) console.log("Invalid move!");
@@ -181,14 +179,19 @@ HonoiInstance.prototype.complite = function () {
         count++;
         if(count < 100) console.log(game.repeat(' ', count)+"You win!");
         else {
+            var elapsed = new Date().getTime() - setting.start;
+            console.log("Пройденно за: "+ (elapsed/60000).toFixed(2) +" минуты");
             clearInterval(interval);
             reader.close();
         }
 
     }, 100)
+
+
 }
 
-var game = new HonoiInstance(5);
+var game = new HonoiInstance(21);
+setting.start = new Date().getTime();
 
 game.run(function() {
     game.complite();

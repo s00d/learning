@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="./vue.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+        .blin { height:20px; opacity:.9; border-radius:4px;box-shadow:0 2px 4px #ccc; position: absolute;}
+        .line {
+            background: none;
+            padding-top: 120px;
+            height: 100%;
+            cursor: pointer;
+            border: 1px solid #d9d9d9;
+        }
+        .line:hover {
+            background-color: #cccccc;
+        }
+
+        .list-item {
+            display: inline-block;
+        }
+        .list-enter-active, .list-leave-active {
+            transition: all 1s;
+        }
+        .list-enter, .list-leave-to /* .list-leave-active for <2.1.8 */ {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="app">
+            <div class="row">
+                <div class="col-md-4" v-for="(item, id) in stacks" @click="select(id)"
+                     :style="{width: max, background: selected === id ? 'rgba(120, 204, 101, 0.26)' : 'none'}">
+                    <div class="line" style="height: 252px;">
+
+                        <transition-group name="list" tag="span">
+                            <div v-for="(count, id) in item" class="blin" :key="count" v-if="count > 0"
+                                 :style="{
+                                    width: getWidth(count) +'px',
+                                    'margin-left': getMargin(count) +'px',
+                                    background: genCalor(count),
+                                    bottom: genBottom(id)+'px',
+                                 }">
+                            </div>
+                        </transition-group>
+                    </div>
+                </div>
+            </div>
+            <div style="height: 200px; overflow: scroll;">
+                <div v-for="ln in log" v-html="ln"></div>
+            </div>
+            <div v-text="stacks"></div>
+            <div v-text="win"></div>
+            <a @click="win = [1,1,1]">win</a>
+            <a @click="reset">reset</a><input v-model="numDisks">
+            <a @click="runBot(1)">run bot #1</a>
+            <a @click="runBot(2)">run bot #2</a>
+        </div>
+
+    </div>
+
+    <script>
+        Vue.config.devtools = true
+        var app = new Vue({
+            el: '#app',
+            data: {
+                stacks: [[],[],[]],
+                win: [1,0,0],
+                calors: {},
+                numDisks: 5,
+                selected: false,
+                log: [],
+                steps: 0,
+                start: 0
+            },
+            watch: {
+                log: function (val) {
+                    if (val.length > 30) val.pop()
+                },
+                numDisks: function () {
+                    this.reset()
+                }
+            },
+            computed: {
+                max: function () {
+                    return (this.numDisks * 20) + 50 +'px'
+                },
+                time: function () {
+                    var elapsed = new Date().getTime() - this.start;
+                    return (elapsed/60000).toFixed(2)
+                }
+            },
+            methods: {
+                getWidth: function (val) {
+                    return val * 20
+                },
+                getMargin: function (val) {
+                    return (this.numDisks - val) * 10 + 10
+                },
+                genBottom: function (val) {
+                    return (this.numDisks - val - 1) * 20
+                },
+                select(id){
+                    this.log.unshift('id: '+ id)
+                    this.log.unshift('selected: '+ this.selected)
+                    this.log.unshift('this.selected === false: '+ (this.selected === false))
+                    this.log.unshift('this.selected !== id: '+ (this.selected !== id))
+                    this.log.unshift('-------------: ')
+                    if(this.selected === false) return this.selected = id
+                    else if(this.selected !== id) this.move(this.selected, id)
+                    this.selected = false
+                },
+                genCalor: function(count) {
+                    if(!this.calors[count]) this.calors[count] = "#"+((1<<24)*Math.random()|0).toString(16)
+                    return this.calors[count]
+                },
+                isValidMove: function (startTowerIdx, endTowerIdx, startIndex = 0, endIndex = this.numDisks - 1) {
+                    if(startIndex > this.numDisks - 1 || endIndex < 0) return false;
+
+                    if (this.stacks[startTowerIdx][startIndex] === 0) {
+                        return this.isValidMove(startTowerIdx, endTowerIdx, startIndex+1, endIndex);
+                    } else if (this.stacks[endTowerIdx][endIndex] != 0) {
+                        if (this.stacks[startTowerIdx][startIndex] < this.stacks[endTowerIdx][endIndex]) {
+                            return this.isValidMove(startTowerIdx, endTowerIdx, startIndex, endIndex-1);
+                        } else {
+                            return false;
+                        }
+                    } else return {start: startIndex, end: endIndex};
+                },
+                move: function (startIdx, endIdx) {
+                    this.log.unshift('startIdx: '+startIdx+' endIdx: '+ endIdx)
+                    var idexes = this.isValidMove(startIdx, endIdx)
+                    this.log.unshift('idexes: '+ JSON.stringify(idexes))
+                    if (idexes) {
+                        this.stacks[endIdx][idexes.end] = this.stacks[startIdx][idexes.start];
+                        this.stacks[startIdx][idexes.start] = 0
+                        this.steps++;
+                        this.printToConsole();
+                        this.isWin();
+
+                        return true;
+                    }
+                    return false;
+                },
+                checkRow: function (i, index = this.numDisks - 1) {
+                    if(index < 0) return this.win[i] = 1
+                    if(this.stacks[i][index] === index + 1) return this.checkRow(i, index - 1)
+                    else return false;
+                },
+                isWin: function () {
+                    var self = this;
+                    for(var j = 1; j < this.stacks.length; j++) this.checkRow(j)
+
+                    if(this.win[1] === 1 && this.win[2] === 1) {
+                        this.log.unshift('you win!')
+                        this.log.unshift("time: " + this.time);
+                        setTimeout(function () {
+                            self.reset()
+                        }, 2000)
+                    }
+                    return (this.win[1] === 1 && this.win[2] === 1)
+                },
+                reset: function () {
+                    this.start = new Date().getTime();
+                    this.stacks = [[],[],[]]
+                    this.win =  [1,0,0];
+                    for (var i = this.numDisks; i > 0; i--) {
+                        this.stacks[0].unshift(i);
+                        for(var j = 1; j < this.stacks.length; j++) this.stacks[j].unshift(0);
+                    }
+                    this.log.unshift("Minimum: "+ (Math.pow(2, this.numDisks) - 1) * 2);
+                },
+                solve: function (n, from, to, free, cb) {
+                    if (n > 0) {
+                        this.solve(n-1, from, free, to)
+                        console.log(n+': Переместить диск со стержня ' + from + ' на стержень ' + to)
+                        this.move(from, to);
+
+                        this.solve(n-1, free, to, from);
+                    }
+                    if(typeof cb !== 'undefined') cb()
+                },
+                getRand: function (min, max) {
+                    return Math.random() * (max - min) + min;
+                },
+                runBot: function (type = 1) {
+                    var self = this;
+                    if(type == 1){
+                        this.solve(this.numDisks, 0, 1, 2, function () {
+                            console.log("sleep and wait");
+                            setTimeout(function () { self.solve(self.numDisks, 1, 2, 0)}, 2000)
+                        });
+                    } else {
+                        var bot = setInterval(function () {
+                            var a1 = parseInt(self.getRand(0, 3));
+                            var a2 = parseInt(self.getRand(0, 3));
+                            var moved = self.move(a1, a2);
+                            if (!moved) console.log("Invalid move!");
+                            if (self.isWin()) clearInterval(bot);
+                        }, 10)
+                    }
+
+                },
+                repeat: function(str, count) {
+                    if (count == 0) return "";
+                    var array = [];
+                    for(var i = 0; i <= count - 1; i++) array[i] = str;
+                    return array.join('');
+                },
+                printToConsole: function () {
+                    var max = this.numDisks + 1;
+                    var line = this.repeat('-', 100);
+                    console.log("Steps: " + this.steps);
+                    console.log(line);
+                    for (var i = 0; i < this.numDisks; i++) {
+                        line = i + " "
+                        for(var j in this.stacks) {
+                            var count = (this.stacks[j][i] === undefined) ? 0 : this.stacks[j][i];
+                            line += this.repeat(' ', max - count);
+                            line += this.repeat('-', count);
+                            line += '|';
+                            line += this.repeat('-', count);
+                            line += this.repeat(' ', max - count + 1);
+                        }
+                        console.log(line);
+                    }
+                }
+            },
+            created: function () {
+                this.reset();
+            },
+        })
+    </script>
+
+</body>
+</html>
